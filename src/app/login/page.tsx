@@ -1,13 +1,37 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import axios from 'axios';
+import { useRouter } from 'next/navigation';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
+  const router = useRouter();
+
+  useEffect(() => {
+    const checkIfLoggedIn = async () => {
+      const token = localStorage.getItem('access_token');
+      
+      if (token) {
+        try {
+          const response = await axios.get('http://localhost:8000/v1/auth/check_login', {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (response.data.message === 'Token is valid') {
+            router.push('/dashboard'); // Redirect to dashboard if token is valid
+          }
+        } catch (error) {
+          // If token is invalid or expired, allow the user to login
+          console.log('Token is invalid. User needs to log in.');
+        }
+      }
+    };
+
+    checkIfLoggedIn();
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,16 +43,17 @@ const LoginPage = () => {
         password,
       });
 
-      setMessage(response.data.message);
-      setEmail('');
-      setPassword('');
+      // Store the token in local storage
+      localStorage.setItem('access_token', response.data.access_token);
+
+      // Redirect to dashboard
+      router.push('/dashboard');
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
-        // If the error is an Axios error, handle it properly
         if (error.response && error.response.data) {
           setMessage(error.response.data.detail);
         } else {
-          setMessage('An error occurred during registration.');
+          setMessage('An unexpected error occurred during login.');
         }
       } else {
         setMessage('An unexpected error occurred.');
@@ -70,7 +95,7 @@ const LoginPage = () => {
         Don't have an account? 
         <Link href="/register" legacyBehavior><a className="text-blue-500">Register</a></Link>
       </p>
-      {message && <p className="mt-4 text-sm text-center text-green-500">{message}</p>}
+      {message && <p className="mt-4 text-sm text-center text-red-500">{message}</p>}
     </div>
   );
 };
