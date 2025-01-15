@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { Scheme, FundSchemesResponse } from '../types/FundScheme';
@@ -14,6 +14,7 @@ const Dashboard = () => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [selectedScheme, setSelectedScheme] = useState<Scheme | null>(null);
   const router = useRouter();
+  const popupRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const fetchFundFamilies = async () => {
@@ -121,6 +122,24 @@ const Dashboard = () => {
     setSelectedScheme(null);
   };
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (popupRef.current && !popupRef.current.contains(event.target as Node)) {
+        closePopup();
+      }
+    };
+
+    if (isPopupOpen) {
+      document.addEventListener('click', handleClickOutside);
+    } else {
+      document.removeEventListener('click', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [isPopupOpen]);
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
       <div className="bg-white shadow-md rounded-lg p-8 w-full max-w-6xl">
@@ -215,7 +234,10 @@ const Dashboard = () => {
         {/* Popup Modal */}
         {isPopupOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+            <div 
+              ref={popupRef}
+              className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md"
+            >
               <button 
                 onClick={closePopup}
                 className="absolute top-2 right-2 text-gray-500 hover:text-gray-900"
