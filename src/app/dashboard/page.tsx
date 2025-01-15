@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
-import { Scheme, FundSchemesResponse } from '../types/FundScheme'; // Import the type we just created
+import { Scheme, FundSchemesResponse } from '../types/FundScheme';
 
 const Dashboard = () => {
   const [fundFamilies, setFundFamilies] = useState<string[]>([]);
   const [selectedFamily, setSelectedFamily] = useState<string>('');
   const [error, setError] = useState('');
   const [openEndedSchemes, setOpenEndedSchemes] = useState<Scheme[]>([]);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -32,7 +33,9 @@ const Dashboard = () => {
             headers: { Authorization: `Bearer ${token}` },
           });
 
-          setFundFamilies(fundFamiliesResponse.data.fund_families);
+          if (fundFamiliesResponse.data.status === 'success') {
+            setFundFamilies(fundFamiliesResponse.data.fund_families);
+          }
         }
       } catch (err: unknown) {
         if (axios.isAxiosError(err)) {
@@ -57,6 +60,8 @@ const Dashboard = () => {
   }, [router]);
 
   const fetchOpenEndedSchemes = async () => {
+    setLoading(true);
+    setError('');
     const token = localStorage.getItem('access_token');
     
     if (!token) {
@@ -67,18 +72,22 @@ const Dashboard = () => {
 
     if (!selectedFamily) {
       setError('Please select a fund family first.');
+      setLoading(false);
       return;
     }
 
     try {
-      const response = await axios.get<FundSchemesResponse>('http://localhost:8000/v1/fund_schemes/latest/open_ended', 
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          params: { fund_family: selectedFamily }  // Pass the selected family as a query parameter
-        }
+      const response = await axios.post<FundSchemesResponse>(
+        'http://localhost:8000/v1/fund_schemes/latest/open_ended',
+        { fund_family: selectedFamily },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      setOpenEndedSchemes(response.data.data); 
+      if (response.data.data) {
+        setOpenEndedSchemes(response.data.data);
+      } else {
+        setError('Failed to fetch schemes data');
+      }
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         if (err.response) {
@@ -95,62 +104,134 @@ const Dashboard = () => {
       } else {
         setError('An unexpected error occurred.');
       }
+    } finally {
+      setLoading(false);
     }
   };
 
+  const handleRowClick = (scheme: Scheme) => {
+    console.log('Selected scheme:', scheme);
+    // You can add additional functionality here, like navigation to a detail page
+  };
+
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="bg-white shadow-md rounded-lg p-8 w-96">
-        <h1 className="text-2xl font-bold text-center mb-6">Dashboard</h1>
-        {error && <p className="text-red-500 text-center">{error}</p>}
+    <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
+      <div className="bg-white shadow-md rounded-lg p-8 w-full max-w-6xl">
+        <h1 className="text-2xl font-bold text-center mb-6">Mutual Fund Dashboard</h1>
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            {error}
+          </div>
+        )}
         
         <div className="mt-6">
-          <label htmlFor="fund-family" className="block text-sm font-medium text-gray-700 text-center">Select Fund Family House:</label>
+          <label htmlFor="fund-family" className="block text-sm font-medium text-gray-700 mb-2">
+            Select Fund Family:
+          </label>
           <select
             id="fund-family"
             value={selectedFamily}
             onChange={(e) => setSelectedFamily(e.target.value)}
-            className="w-full border border-gray-300 p-2 rounded mt-2"
+            className="w-full border border-gray-300 p-2 rounded focus:ring-blue-500 focus:border-blue-500"
           >
-            <option value="" disabled>Select a fund family</option>
-            {fundFamilies.map((family, index) => (
-              <option key={index} value={family}>{family}</option>
+            <option value="">Select a fund family</option>
+            {fundFamilies.map((family) => (
+              <option key={family} value={family}>{family}</option>
             ))}
           </select>
         </div>
 
-        <div className="mt-4">
+        <div className="mt-6">
           <button
             onClick={fetchOpenEndedSchemes}
-            className="bg-blue-500 text-white p-2 rounded mt-4 w-full"
+            disabled={loading || !selectedFamily}
+            className={`w-full px-4 py-2 rounded font-medium text-white ${
+              loading || !selectedFamily
+                ? 'bg-blue-300 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700'
+            }`}
           >
-            Fetch Open-Ended Schemes
+            {loading ? 'Loading...' : 'Fetch Open-Ended Schemes'}
           </button>
         </div>
 
         {openEndedSchemes.length > 0 && (
-          <div className="mt-6">
-            <h3 className="text-xl font-semibold mb-2">Open-Ended Schemes:</h3>
-            <table className="min-w-full table-auto border-collapse border border-gray-200 rounded">
-              <thead className="bg-gray-200">
-                <tr>
-                  <th className="border border-gray-300 px-4 py-2">Scheme Name</th>
-                  <th className="border border-gray-300 px-4 py-2">Net Asset Value</th>
-                  <th className="border border-gray-300 px-4 py-2">Scheme Type</th>
-                  <th className="border border-gray-300 px-4 py-2">Category</th>
-                </tr>
-              </thead>
-              <tbody>
-                {openEndedSchemes.map((scheme, index) => (
-                  <tr key={index} className={index % 2 === 0 ? 'bg-gray-100' : 'bg-white'}>
-                    <td className="border border-gray-300 px-4 py-2">{scheme.Scheme_Name}</td>
-                    <td className="border border-gray-300 px-4 py-2">{scheme.Net_Asset_Value}</td>
-                    <td className="border border-gray-300 px-4 py-2">{scheme.Scheme_Type}</td>
-                    <td className="border border-gray-300 px-4 py-2">{scheme.Scheme_Category}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="mt-8">
+            <h3 className="text-xl font-semibold mb-4">Open-Ended Schemes</h3>
+            <div className="overflow-x-auto">
+              <div className="max-h-[600px] overflow-y-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50 sticky top-0">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Scheme Code
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Scheme Name
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        NAV
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Date
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Type
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Category
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Fund Family
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        ISIN (Growth)
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        ISIN (Reinvestment)
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {openEndedSchemes.map((scheme) => (
+                      <tr 
+                        key={scheme.Scheme_Code}
+                        onClick={() => handleRowClick(scheme)}
+                        className="cursor-pointer hover:bg-blue-50 transition-colors duration-150 ease-in-out"
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {scheme.Scheme_Code}
+                        </td>
+                        <td className="px-6 py-4 whitespace-normal text-sm text-gray-900">
+                          {scheme.Scheme_Name}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          ₹{Number(scheme.Net_Asset_Value).toFixed(4)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {scheme.Date}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {scheme.Scheme_Type}
+                        </td>
+                        <td className="px-6 py-4 whitespace-normal text-sm text-gray-900">
+                          {scheme.Scheme_Category}
+                        </td>
+                        <td className="px-6 py-4 whitespace-normal text-sm text-gray-900">
+                          {scheme.Mutual_Fund_Family}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {scheme.ISIN_Div_Payout_ISIN_Growth}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {scheme.ISIN_Div_Reinvestment}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         )}
       </div>
