@@ -13,6 +13,8 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(false);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [selectedScheme, setSelectedScheme] = useState<Scheme | null>(null);
+  const [units, setUnits] = useState<number>(1); // State for units
+  const [buyStatus, setBuyStatus] = useState<string>(''); // To show purchase status message
   const router = useRouter();
   const popupRef = useRef<HTMLDivElement | null>(null);
 
@@ -120,6 +122,32 @@ const Dashboard = () => {
   const closePopup = () => {
     setIsPopupOpen(false);
     setSelectedScheme(null);
+    setBuyStatus('');
+  };
+
+  const handleBuy = async () => {
+    const token = localStorage.getItem('access_token');
+    if (!token || !selectedScheme) {
+      setBuyStatus('Please log in and select a scheme.');
+      return;
+    }
+
+    try {
+      const response = await axios.post('http://localhost:8000/v1/buy', 
+        {
+          Scheme_Code: selectedScheme.Scheme_Code,
+          units,
+          nav: selectedScheme.Net_Asset_Value,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      setBuyStatus(response.data.message || 'Purchase successful!');
+    } catch (error) {
+      setBuyStatus('An error occurred while purchasing.');
+    }
   };
 
   useEffect(() => {
@@ -253,6 +281,36 @@ const Dashboard = () => {
                   <p><strong>NAV:</strong> ₹{Number(selectedScheme.Net_Asset_Value).toFixed(4)}</p>
                   <p><strong>ISIN (Growth):</strong> {selectedScheme.ISIN_Div_Payout_ISIN_Growth}</p>
                   <p><strong>ISIN (Reinvestment):</strong> {selectedScheme.ISIN_Div_Reinvestment}</p>
+
+                  {/* Counter */}
+                  <div className="mt-4">
+                    <label htmlFor="units" className="block text-sm font-medium text-gray-700">Units</label>
+                    <input
+                      type="number"
+                      id="units"
+                      value={units}
+                      onChange={(e) => setUnits(Number(e.target.value))}
+                      min="1"
+                      className="w-full border border-gray-300 p-2 rounded mt-2"
+                    />
+                  </div>
+
+                  {/* Buy Button */}
+                  <div className="mt-4">
+                    <button 
+                      onClick={handleBuy}
+                      className="w-full px-4 py-2 rounded font-medium text-white bg-green-600 hover:bg-green-700"
+                    >
+                      Buy
+                    </button>
+                  </div>
+
+                  {/* Buy Status */}
+                  {buyStatus && (
+                    <div className="mt-4 text-sm text-center text-gray-600">
+                      {buyStatus}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
