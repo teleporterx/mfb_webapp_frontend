@@ -11,6 +11,8 @@ const Dashboard = () => {
   const [error, setError] = useState('');
   const [openEndedSchemes, setOpenEndedSchemes] = useState<Scheme[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [selectedScheme, setSelectedScheme] = useState<Scheme | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -110,8 +112,13 @@ const Dashboard = () => {
   };
 
   const handleRowClick = (scheme: Scheme) => {
-    console.log('Selected scheme:', scheme);
-    // You can add additional functionality here, like navigation to a detail page
+    setSelectedScheme(scheme);
+    setIsPopupOpen(true);
+  };
+
+  const closePopup = () => {
+    setIsPopupOpen(false);
+    setSelectedScheme(null);
   };
 
   return (
@@ -170,25 +177,10 @@ const Dashboard = () => {
                         Scheme Name
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        NAV
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Date
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Type
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Category
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Fund Family
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        ISIN (Growth)
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        ISIN (Reinvestment)
                       </th>
                     </tr>
                   </thead>
@@ -206,31 +198,41 @@ const Dashboard = () => {
                           {scheme.Scheme_Name}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          ₹{Number(scheme.Net_Asset_Value).toFixed(4)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {scheme.Date}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {scheme.Scheme_Type}
                         </td>
                         <td className="px-6 py-4 whitespace-normal text-sm text-gray-900">
                           {scheme.Scheme_Category}
-                        </td>
-                        <td className="px-6 py-4 whitespace-normal text-sm text-gray-900">
-                          {scheme.Mutual_Fund_Family}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {scheme.ISIN_Div_Payout_ISIN_Growth}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {scheme.ISIN_Div_Reinvestment}
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Popup Modal */}
+        {isPopupOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+              <button 
+                onClick={closePopup}
+                className="absolute top-2 right-2 text-gray-500 hover:text-gray-900"
+              >
+                ×
+              </button>
+              {selectedScheme && (
+                <div>
+                  <h3 className="text-xl font-semibold mb-4">Scheme Details</h3>
+                  <p><strong>Scheme Name:</strong> {selectedScheme.Scheme_Name}</p>
+                  <p><strong>Date:</strong> {selectedScheme.Date}</p>
+                  <p><strong>Category:</strong> {selectedScheme.Scheme_Category}</p>
+                  <p><strong>NAV:</strong> ₹{Number(selectedScheme.Net_Asset_Value).toFixed(4)}</p>
+                  <p><strong>ISIN (Growth):</strong> {selectedScheme.ISIN_Div_Payout_ISIN_Growth}</p>
+                  <p><strong>ISIN (Reinvestment):</strong> {selectedScheme.ISIN_Div_Reinvestment}</p>
+                </div>
+              )}
             </div>
           </div>
         )}
