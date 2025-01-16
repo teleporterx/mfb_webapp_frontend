@@ -18,6 +18,16 @@ const Dashboard = () => {
   const router = useRouter();
   const popupRef = useRef<HTMLDivElement | null>(null);
 
+  const navigateToPortfolio = () => {
+    router.push('/portfolio');
+  };
+
+  const handleLogout = () => {
+    // Remove the token from localStorage and redirect to login page
+    localStorage.removeItem('access_token');
+    router.push('/login');
+  };
+
   useEffect(() => {
     const fetchFundFamilies = async () => {
       const token = localStorage.getItem('access_token');
@@ -136,8 +146,13 @@ const Dashboard = () => {
       const response = await axios.post('http://localhost:8000/v1/buy', 
         {
           Scheme_Code: selectedScheme.Scheme_Code,
+          Scheme_Name: selectedScheme.Scheme_Name,
+          Date: selectedScheme.Date,
+          Scheme_Category: selectedScheme.Scheme_Category,
           units,
           nav: selectedScheme.Net_Asset_Value,
+          ISIN_Div_Payout_ISIN_Growth: selectedScheme.ISIN_Div_Payout_ISIN_Growth,
+          ISIN_Div_Reinvestment: selectedScheme.ISIN_Div_Reinvestment,
         },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -171,7 +186,24 @@ const Dashboard = () => {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
       <div className="bg-white shadow-md rounded-lg p-8 w-full max-w-6xl">
-        <h1 className="text-2xl font-bold text-center mb-6">Mutual Fund Dashboard</h1>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold text-center">Mutual Fund Dashboard</h1>
+          <div className="flex space-x-4">
+            <button
+              onClick={navigateToPortfolio}
+              className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+            >
+              Portfolio
+            </button>
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
             {error}
