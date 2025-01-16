@@ -149,6 +149,7 @@ const Dashboard = () => {
           Scheme_Name: selectedScheme.Scheme_Name,
           Date: selectedScheme.Date,
           Scheme_Category: selectedScheme.Scheme_Category,
+          Mutual_Fund_Family: selectedScheme.Mutual_Fund_Family,
           units,
           nav: selectedScheme.Net_Asset_Value,
           ISIN_Div_Payout_ISIN_Growth: selectedScheme.ISIN_Div_Payout_ISIN_Growth,
