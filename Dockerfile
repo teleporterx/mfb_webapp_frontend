@@ -1,6 +1,9 @@
 # Use an official Node.js image as the base image
 FROM node:23.4.0-alpine
 
+# Install curl (or any other utilities you may need)
+RUN apk add --no-cache curl
+
 # Set the working directory inside the container
 WORKDIR /app
 

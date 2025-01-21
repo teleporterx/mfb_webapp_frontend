@@ -5,6 +5,8 @@ import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { Scheme, FundSchemesResponse } from '../types/FundScheme';
 
+const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+
 const Dashboard = () => {
   const [fundFamilies, setFundFamilies] = useState<string[]>([]);
   const [selectedFamily, setSelectedFamily] = useState<string>('');
@@ -39,12 +41,12 @@ const Dashboard = () => {
       }
 
       try {
-        const checkLoginResponse = await axios.get('http://localhost:8000/v1/auth/check_login', {
+        const checkLoginResponse = await axios.get(`${backendUrl}/v1/auth/check_login`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
         if (checkLoginResponse.data.message === 'Token is valid') {
-          const fundFamiliesResponse = await axios.get('http://localhost:8000/v1/fund_families', {
+          const fundFamiliesResponse = await axios.get(`${backendUrl}/v1/fund_families`, {
             headers: { Authorization: `Bearer ${token}` },
           });
 
@@ -93,7 +95,7 @@ const Dashboard = () => {
 
     try {
       const response = await axios.post<FundSchemesResponse>(
-        'http://localhost:8000/v1/fund_schemes/latest/open_ended',
+        `${backendUrl}/v1/fund_schemes/latest/open_ended`,
         { fund_family: selectedFamily },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -143,7 +145,7 @@ const Dashboard = () => {
     }
 
     try {
-      const response = await axios.post('http://localhost:8000/v1/buy', 
+      const response = await axios.post(`${backendUrl}/v1/buy`, 
         {
           Scheme_Code: selectedScheme.Scheme_Code,
           Scheme_Name: selectedScheme.Scheme_Name,

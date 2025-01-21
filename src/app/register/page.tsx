@@ -4,6 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import axios from 'axios';
 
+const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+
 const RegisterPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -14,7 +16,7 @@ const RegisterPage = () => {
     setMessage(''); // Clear previous message
 
     try {
-      const response = await axios.post('http://localhost:8000/v1/auth/register', {
+      const response = await axios.post(`${backendUrl}/v1/auth/register`, {
         email,
         password,
       });

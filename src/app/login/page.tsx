@@ -5,6 +5,8 @@ import Link from 'next/link';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 
+const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -17,7 +19,7 @@ const LoginPage = () => {
       
       if (token) {
         try {
-          const response = await axios.get('http://localhost:8000/v1/auth/check_login', {
+          const response = await axios.get(`${backendUrl}/v1/auth/check_login`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (response.data.message === 'Token is valid') {
@@ -38,7 +40,7 @@ const LoginPage = () => {
     setMessage(''); // Clear previous message
 
     try {
-      const response = await axios.post('http://localhost:8000/v1/auth/login', {
+      const response = await axios.post(`${backendUrl}/v1/auth/login`, {
         email,
         password,
       });

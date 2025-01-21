@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Scheme } from "../types/FundScheme"; // Import the Scheme type
 
+const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+
 const PortfolioPage = () => {
   const [portfolio, setPortfolio] = useState<Scheme[]>([]); // Use the Scheme type for portfolio
   const [error, setError] = useState<string>("");
@@ -18,7 +20,7 @@ const PortfolioPage = () => {
       }
 
       try {
-        const response = await fetch("http://localhost:8000/v1/portfolio", {
+        const response = await fetch(`${backendUrl}/v1/portfolio`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
